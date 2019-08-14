@@ -32,6 +32,7 @@ class MPWorker(object) :
          self.Jobs=[]
          self.Ready = False
          self.Libs=[]
+         self.RunThisBefore = []
 
     def AddJob(self,Function,Data) :
         """
@@ -74,7 +75,8 @@ class MPWorker(object) :
                 print("impossible to serialize the data from job "+str(i))
                 raise error
             ## preparing the executing file here
-            PrevLines = "\n".join(["import "+Lib for Lib in self.Libs]) + "\n\n"
+            ImportLines = "\n".join(["import "+Lib for Lib in self.Libs]) + "\n\n"
+            PrevLines = "\n".join([Line for Line in self.RunThisBefore]) + "\n\n"
             Executingfile = """
 import dill
 from path import Path
@@ -87,7 +89,7 @@ Result = Function(Data)
 dill.dump(Result,open(Root.joinpath("result.pyobj"),"wb"))
             """
             File = open(Folder.joinpath("Executor.py"),"w")
-            Executingfile =PrevLines+Executingfile
+            Executingfile =ImportLines+PrevLines+Executingfile
             File.write(Executingfile)
             File.close()
             i+=1
@@ -116,8 +118,8 @@ dill.dump(Result,open(Root.joinpath("result.pyobj"),"wb"))
         while AllGood==False :
             Tests = [P.poll() is None for P in Processes]
             print(Tests)
-            if False in Tests :
-                Nb = Tests.count(False)
+            if True in Tests :
+                Nb = Tests.count(True)
                 print(str(Nb) +"Jobs are still running")
                 time.sleep(2)
             else :
