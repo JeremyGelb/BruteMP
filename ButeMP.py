@@ -98,7 +98,7 @@ dill.dump(Result,open(Root.joinpath("result.pyobj"),"wb"))
 
 
 
-    def RunJobs(self) :
+    def RunJobs(self,verbose=True,waittime=2) :
         """
         This function will run the jobs, but they need to be ready before
         """
@@ -109,7 +109,8 @@ dill.dump(Result,open(Root.joinpath("result.pyobj"),"wb"))
 
         for i in range(len(self.Jobs)) :
             ExecutorPath = str(self.Root.joinpath("job"+str(i)+"/Executor.py"))
-            print("Commande : "+str([PythonPath, ExecutorPath]))
+            if verbose :
+                print("Commande : "+str([PythonPath, ExecutorPath]))
             P = subprocess.Popen([PythonPath, ExecutorPath])
             Processes.append(P)
 
@@ -117,14 +118,14 @@ dill.dump(Result,open(Root.joinpath("result.pyobj"),"wb"))
         AllGood = False
         while AllGood==False :
             Tests = [P.poll() is None for P in Processes]
-            print(Tests)
             if True in Tests :
                 Nb = Tests.count(True)
-                print(str(Nb) +"Jobs are still running")
-                time.sleep(2)
+                if verbose :
+                    print(str(Nb) +" Jobs are still running")
+                time.sleep(waittime)
             else :
                 AllGood = True
-        time.sleep(2)
+        time.sleep(waittime)
 
     def CollectResults(self) :
         """
