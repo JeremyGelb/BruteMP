@@ -27,6 +27,8 @@ class MPWorker(object) :
              os.mkdir(OkRoot)
          else :
              shutil.rmtree(OkRoot)
+         if " " in OkRoot :
+            raise ValueError("The main path should not contain spaces to ensure the execution of the command")
          self.Root = OkRoot
          self.Read=False
          self.Jobs=[]
@@ -97,6 +99,44 @@ dill.dump(Result,open(Root.joinpath("result.pyobj"),"wb"))
         self.Ready=True
 
 
+    def TestJob(self,i=0,MaxWait=float("inf")) :
+        """
+        this method allows the user to test a specific job (i) in the list to ensure that it will work latter
+        MaxWait : Max time to wait in second before killing the process
+        """
+        if self.Ready == False :
+            raise ValueError("The jobs are not verified ! Please run PrepareJobs before")
+
+        PythonPath = str(sys.executable).replace("pythonw","python").replace("\\","/")
+        ExecutorPath = str(self.Root.joinpath("job"+str(i)+"/Executor.py"))
+        print("Commande : "+str([PythonPath, ExecutorPath]))
+        P = subprocess.Popen([PythonPath, ExecutorPath],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        Waited = 0
+        Finished = False
+        while Waited<MaxWait :
+            time.sleep(2)
+            Waited+=2
+            Test = P.poll()
+            if Test is None :
+                Finished = True
+                break
+            elif Test == 1 :
+                print("The job raised an error ...")
+                Finished = True
+                break
+        if Finished :
+            print("The job ended before reaching the max waiting time")
+        else :
+            print("The didn't end before reaching the max waiting time")
+            print("Killing the process...")
+            P.kill()
+        print("Final message of the process : ")
+        output = str(P.stdout.read())
+        print(output.replace("\\n","\n").replace("\\r","\r"))
+
+
+
+
 
     def RunJobs(self,verbose=True,waittime=2) :
         """
@@ -151,7 +191,7 @@ if __name__=="__main__" :
     import sys,math
     sys.path.append("I:/Python/_____GitProjects/JBasics3.6")
     
-    Root = "C:/Users/gelbj/OneDrive/Bureau/Estimation Vehicles"
+    Root = "C:/Users/gelbj/OneDrive/Bureau/Estimation_Vehicles"
     
     from GeoVectors import gpd
     import numpy as np
@@ -172,6 +212,7 @@ if __name__=="__main__" :
     Worker.AddJob(Execution,[Parts[1],Calculus])
     Worker.Libs = ["math"]
     Worker.PrepareJobs()
-    Worker.RunJobs()
-    Results = Worker.CollectResults()
-    Worker.CleanMe()
+    Worker.TestJob(1)
+    # Worker.RunJobs()
+    # Results = Worker.CollectResults()
+    # Worker.CleanMe()
