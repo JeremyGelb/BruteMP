@@ -28,8 +28,10 @@ class MPWorker(object) :
          else :
              shutil.rmtree(OkRoot)
          if " " in OkRoot :
-            raise ValueError("The main path should not contain spaces to ensure the execution of the command")
+            #raise ValueError("The main path should not contain spaces to ensure the execution of the command")
+            print("There is a space in the root folder, I hope it will not break the rest of the code")
          self.Root = OkRoot
+
          self.Read=False
          self.Jobs=[]
          self.Ready = False
@@ -109,21 +111,27 @@ dill.dump(Result,open(Root.joinpath("result.pyobj"),"wb"))
 
         PythonPath = str(sys.executable).replace("pythonw","python").replace("\\","/")
         ExecutorPath = str(self.Root.joinpath("job"+str(i)+"/Executor.py"))
+        # if " " in ExecutorPath :
+        #    ExecutorPath = ExecutorPath
         print("Commande : "+str([PythonPath, ExecutorPath]))
-        P = subprocess.Popen([PythonPath, ExecutorPath],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        print(PythonPath)
+        print(ExecutorPath)
+        P = subprocess.Popen("{0}  {1}".format(PythonPath, r'"%s"' % ExecutorPath),shell=True,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        #P = subprocess.Popen([PythonPath, r'"%s"' % ExecutorPath],shell=True,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         Waited = 0
         Finished = False
         while Waited<MaxWait :
             time.sleep(2)
             Waited+=2
             Test = P.poll()
-            if Test is None :
-                Finished = True
-                break
-            elif Test == 1 :
+            if Test == 1 :
                 print("The job raised an error ...")
                 Finished = True
                 break
+            elif Test is not None :
+                Finished = True
+                break
+
         if Finished :
             print("The job ended before reaching the max waiting time")
         else :
@@ -149,9 +157,10 @@ dill.dump(Result,open(Root.joinpath("result.pyobj"),"wb"))
 
         for i in range(len(self.Jobs)) :
             ExecutorPath = str(self.Root.joinpath("job"+str(i)+"/Executor.py"))
+
             if verbose :
                 print("Commande : "+str([PythonPath, ExecutorPath]))
-            P = subprocess.Popen([PythonPath, ExecutorPath])
+            P = subprocess.Popen("{0}  {1}".format(PythonPath, r'"%s"' % ExecutorPath),shell=True)
             Processes.append(P)
 
         ### waiting for the results
